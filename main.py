@@ -4,7 +4,7 @@ import random
 # Define trainable parameters
 # -----------------------------
 
-r = 0.03
+r = 0.02
 
 # -------------------------------------
 #
@@ -24,8 +24,10 @@ def V_obs_function_tf(S, A):
 
     # Jump term: approximate Poisson jump by Bernoulli trial
     jumps = jump_prob_soft * (jump_mean + jump_std * tf.random.normal((N,1), dtype=tf.float32))
+    expected_jump = lam * (jump_mean + 0.5 * jump_std**2)
+
     # Return next step
-    return S + diffusion + jumps
+    return S + diffusion + expected_jump
 
 
 def initialize_params():
@@ -40,8 +42,8 @@ def initialize_params():
 class ParamNet(tf.keras.Model):
     def __init__(self):
         super().__init__()
-        self.mu = self.add_weight(name="mu", shape=(), initializer=tf.constant_initializer(0.01), trainable=True)
-        self.sigma = self.add_weight(name="sigma", shape=(), initializer=tf.constant_initializer(0.2), trainable=True)
+        self.mu = self.add_weight(name="mu", shape=(), initializer=tf.constant_initializer(0.002), trainable=True)
+        self.sigma = self.add_weight(name="sigma", shape=(), initializer=tf.constant_initializer(0.15), trainable=True)
         self.lam = self.add_weight(name="lam", shape=(), initializer=tf.constant_initializer(0.05), trainable=True)
         self.jump_mean = self.add_weight(name="jump_mean", shape=(), initializer=tf.constant_initializer(0.0), trainable=True)
         self.jump_std = self.add_weight(name="jump_std", shape=(), initializer=tf.constant_initializer(0.1), trainable=True)
@@ -63,7 +65,8 @@ class VHat(tf.keras.Model):
         super().__init__()
         self.hidden1 = tf.keras.layers.Dense(48, activation='tanh')
         self.hidden2 = tf.keras.layers.Dense(32, activation='tanh')
-        self.hidden3 = tf.keras.layers.Dense(16, activation='tanh')
+        self.hidden3 = tf.keras.layers.Dense(32, activation='tanh')
+        self.hidden4 = tf.keras.layers.Dense(16, activation='tanh')
         self.out = tf.keras.layers.Dense(1)
 
     def call(self, S, t):
@@ -71,6 +74,7 @@ class VHat(tf.keras.Model):
         x = self.hidden1(x)
         x = self.hidden2(x)
         x = self.hidden3(x)
+        x = self.hidden4(x)
         return self.out(x)
 
 v_hat_model = VHat()
@@ -85,12 +89,13 @@ param_net(tf.zeros((1,0)))
 # -----------------------------
 # Optimizer
 # -----------------------------
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
 # -----------------------------
 # Training loop
 # -----------------------------
-epochs = 100
+epochs = 2000
+# 1500 is good
 for epoch in range(epochs):
 
     '''
@@ -104,6 +109,10 @@ for epoch in range(epochs):
     
     row_scaler = MinMaxScaler(feature_range=(0, 1))
     in_df = scaler.fit_transform(in_df.reshape(-1,1)).flatten()
+
+    # Add Gaussian noise
+    noise = np.random.normal(0, 0.02, size=in_df.shape)
+    in_df = np.clip(in_df + noise, 0, 1)  # Keep within (0,1)
     
     #print(in_df)
     N = len(in_df)
@@ -144,7 +153,7 @@ for epoch in range(epochs):
         # Loss = MSE of residuals
         loss_data = tf.reduce_mean(tf.square(V - V_obs))  # match network output to observed value
         loss_pde = tf.reduce_mean(tf.square(residual))
-        loss = 0.75 * loss_data + loss_pde
+        loss = 0.6 * loss_data + loss_pde
 
     # Compute gradients for model and PDE parameters
     # tf.gradient() is the backpropogation algorithm
@@ -154,7 +163,7 @@ for epoch in range(epochs):
     optimizer.apply_gradients(zip(grads, v_hat_model.trainable_variables + param_net.trainable_variables))
 
     # Print progress
-    if epoch % 100 == 0:
+    if epoch % 10 == 0:
         print(f"Epoch {epoch}, Loss: {loss.numpy():.6f}, mu: {mu.numpy():.3f}, sigma: {sigma.numpy():.3f}, lam: {lam.numpy():.3f}")
 
 # -----------------------------
