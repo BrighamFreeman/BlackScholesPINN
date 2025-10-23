@@ -90,7 +90,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 # -----------------------------
 # Training loop
 # -----------------------------
-epochs = 500
+epochs = 100
 for epoch in range(epochs):
 
     '''
