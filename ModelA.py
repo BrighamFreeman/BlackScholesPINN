@@ -98,11 +98,9 @@ param_net(tf.zeros((1,0)))
 
 epochs = 4000
 
-tf.keras.optimizers.schedules.CosineDecayRestarts(
-    initial_learning_rate=1e-3,
-    first_decay_steps=200,
-    t_mul=2,
-    m_mul=1.0
+lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
+    initial_learning_rate=0.0001,
+    decay_steps=epochs
 )
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
 
