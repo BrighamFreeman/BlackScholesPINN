@@ -1,1 +1,8 @@
-This repository contains the necessary code and documentation for a research project into Physics Informed Neural Networks (PINN). For additional information, please read the paper in this repo.
+This repository contains all the necessary code for a physics-informed neural network to learn underlying stock market trends. To compare the physics-informed approach to traditional deep learning, a CNN-LSTM hybrid model is also included to compare results. To understand the motivations and layout of the networks, please read the paper pdf attached. 
+
+Physics-Informed Neural Networks (PINNs) are an emerging machine learning framework that embed mathematical constraints within the learning process to ensure consistency with physical or quantitative laws. Building upon Robert C. Merton’s Jump-Diffusion Model, which captures the random fluctuations in stock prices, this paper develops a PINN capable of learning underlying market dynamics and simulating stock price behavior.
+
+To evaluate the performance of this physics-based approach, a CNN-LSTM hybrid model was constructed as a benchmark for stock price forecasting. For six-month prediction windows, the CNN-LSTM achieved mean absolute error (MAE) rates of 4.80\% on training data and 2.78\% on unseen data, while the PINN-based simulations achieved 21.2\% and 12.64\%, respectively. Although the CNN-LSTM outperformed the PINN in direct price forecasting, the PINN produced accurate Jump-Diffusion simulations within an average MAE of \$6.45 and successfully learned interpretable market parameters that describe price behavior.
+
+The results indicate that CNN-LSTM models are more effective for direct price prediction, whereas PINNs are better suited for extracting market parameters and understanding the mechanisms driving stock price movements. An ensemble of both approaches may provide the most comprehensive framework for stock market modeling and analysis.
+
